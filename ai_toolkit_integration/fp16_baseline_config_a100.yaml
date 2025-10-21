@@ -1,0 +1,106 @@
+# FP16 基准训练配置（A100 40GB - Linux系统）
+# 用于对比 COAT FP8，不使用 COAT 优化
+
+job: extension
+config:
+  # 任务名称
+  name: "flux_lora_clothing_fp16_baseline_a100"
+  
+  # 训练配置
+  process:
+    - type: "sd_trainer"
+      training_folder: "output/flux_lora_clothing_fp16_baseline_a100"
+      
+      # 设备配置
+      device: cuda:0
+      
+      # FLUX模型配置
+      network:
+        type: "lora"
+        linear: 32        # 与FP8版本相同
+        linear_alpha: 32
+      
+      # 保存配置
+      save:
+        dtype: bf16
+        save_every: 500
+        max_step_saves_to_keep: 5
+      
+      # 数据集配置
+      datasets:
+        - folder_path: "datasets/clothing"  # 服装图片文件夹
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [512, 768, 1024]  # 与FP8版本相同
+          
+      # 训练参数
+      train:
+        batch_size: 4      # 与FP8版本相同
+        steps: 5000
+        gradient_accumulation_steps: 2  # 与FP8版本相同
+        
+        # 学习率
+        lr: 1e-4
+        
+        # 使用标准 AdamW 优化器（不是 FP8）
+        optimizer: "adamw"
+        
+        # 优化器参数
+        optimizer_params:
+          betas: [0.9, 0.999]
+          eps: 1e-8
+          weight_decay: 0.01
+        
+        # 梯度裁剪
+        gradient_clipping: 1.0
+        
+        # 噪声调度
+        noise_scheduler: "flowmatch"
+        
+        # EMA
+        ema_config:
+          use_ema: true
+          ema_decay: 0.9999
+        
+        # 混合精度 (FP16/BF16)
+        dtype: bf16
+      
+      # 模型配置
+      model:
+        name_or_path: "black-forest-labs/FLUX.1-dev"
+        is_flux: true
+        quantize: false
+      
+      # 采样配置 (与FP8版本完全相同，用于对比)
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250
+        width: 1024
+        height: 1024
+        prompts:
+          # 基于真实训练数据的测试 prompt (与FP8版本相同)
+          - "front view, whole body, a model wearing a deep grey t-shirt with round neckline and short sleeves, black wide-leg pants, black chunky shoes, standing against plain white background, fashion photography"
+          - "a 23 year old European female model wearing [trigger] style grey t-shirt and black pants, natural orange-brown long wavy hair, fashion photography, high quality"
+          - "a model wearing [trigger] black wide-leg pants and chunky shoes, fashionable style, studio lighting"
+          - "close up of [trigger] deep grey t-shirt, round neckline, fabric texture, detailed"
+          - "[trigger] style clothing design, professional fashion photography, 4k, ultra detailed"
+          - "full body portrait, model in [trigger] outfit, high fashion, editorial photography"
+        neg: "blurry, low quality, distorted, deformed, ugly, bad anatomy"
+        seed: 42          # 相同的随机种子
+        walk_seed: true
+        guidance_scale: 3.5
+        sample_steps: 28
+      
+      # 触发词
+      trigger_word: "sks"
+      
+      # 日志
+      logging:
+        log_every: 10
+        use_wandb: false
+
+
+
+

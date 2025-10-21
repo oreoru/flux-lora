@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyTorch
+*.pth
+*.pt
+*.bin
+*.ckpt
+
+# Training outputs
+output/
+logs/
+wandb/
+checkpoint*/
+
+# Datasets (可根据需要调整)
+datasets/
+*.jpg
+*.jpeg
+*.png
+*.webp
+
+# Model files
+*.safetensors
+models/
+
+# Benchmark results
+benchmark_results.json
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ai-toolkit (如果克隆了)
+ai-toolkit/
+
+# Temporary files
+*.tmp
+*.bak
+
+
+
+
+
+
+

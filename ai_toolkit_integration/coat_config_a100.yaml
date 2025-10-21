@@ -1,0 +1,137 @@
+# COAT + ai-toolkit 服装FLUX LoRA训练配置
+
+
+job: extension
+config:
+ 
+  name: "flux_lora_clothing_coat_a100"
+  
+
+  coat:
+    # 启用COAT优化
+    enabled: true
+    
+    # FP8优化器配置
+    optimizer:
+      use_fp8: true
+      m1_format: "e4m3"  # 一阶动量格式
+      m2_format: "e4m3"  # 二阶动量格式  
+      block_size: 256    # A100增大块大小以提高效率
+      use_dynamic_range_expansion: true
+    
+    # FP8激活配置
+    activation:
+      use_fp8: true
+      linear_granularity: "per_tensor"     
+      nonlinear_granularity: "per_group"   
+      group_size: 256   
+    
+
+    memory:
+      enable_efficient_checkpoint: true
+      log_memory_stats: true
+      gradient_checkpointing: false  
+      cpu_offload: false
+  
+  # 训练配置
+  process:
+    - type: "sd_trainer"
+      training_folder: "output/flux_lora_clothing_coat_a100"
+      
+   
+      device: cuda:0
+      
+      # FLUX模型配置
+      network:
+        type: "lora"
+        linear: 32        
+        linear_alpha: 32
+        
+
+      
+      # 保存配置
+      save:
+        dtype: bf16
+        save_every: 500
+        max_step_saves_to_keep: 5  # A100存储充足，保存更多检查点
+      
+      # 数据集配置
+      datasets:
+        - folder_path: "datasets/clothing"  # 服装图片文件夹
+          caption_ext: "txt"
+          caption_dropout_rate: 0
+          shuffle_tokens: false
+          cache_latents_to_disk: true
+          resolution: [1024] 
+          
+      # 训练参数
+      train:
+        batch_size: 1      
+        steps: 2500
+        gradient_accumulation_steps: 2  # 有效batch size = 4 * 2 = 8
+        
+        # 学习率
+        lr: 2e-4
+        
+        # Dropout 正则化
+        dropout: 0.2
+        
+        # 使用COAT FP8优化器
+        optimizer: "coat_fp8_adamw"  # 自定义优化器类型
+        
+        # 优化器参数 (A100优化)
+        optimizer_params:
+          betas: [0.9, 0.999]
+          eps: 1e-8
+          weight_decay: 0.01
+        
+      
+        gradient_clipping: 1.0
+        
+     
+        noise_scheduler: "flowmatch"  # FLUX使用flowmatch
+        
+        # EMA
+        ema_config:
+          use_ema: true
+          ema_decay: 0.9999  
+        
+        # 混合精度
+        dtype: bf16  # COAT在bf16基础上使用FP8
+      
+      # 模型配置
+      model:
+        name_or_path: "black-forest-labs/FLUX.1-dev"  # Linux使用HuggingFace路径
+        is_flux: true
+        quantize: false 
+      
+      # 采样配置
+      sample:
+        sampler: "flowmatch"
+        sample_every: 250  
+        width: 1024        # A100支持高分辨率采样
+        height: 1024
+        prompts:
+          # 基于真实训练数据的测试 prompt
+          - "front view, whole body, a model wearing a deep grey t-shirt with round neckline and short sleeves, black wide-leg pants, black chunky shoes, standing against plain white background, fashion photography"
+          - "a 23 year old European female model wearing [trigger] style grey t-shirt and black pants, natural orange-brown long wavy hair, fashion photography, high quality"
+          - "a model wearing [trigger] black wide-leg pants and chunky shoes, fashionable style, studio lighting"
+          - "close up of [trigger] deep grey t-shirt, round neckline, fabric texture, detailed"
+          - "[trigger] style clothing design, professional fashion photography, 4k, ultra detailed"
+          - "full body portrait, model in [trigger] outfit, high fashion, editorial photography"
+        neg: "blurry, low quality, distorted, deformed, ugly, bad anatomy"
+        seed: 42
+        walk_seed: true
+        guidance_scale: 3.5
+        sample_steps: 28
+      
+ 
+      trigger_word: "sks"
+      
+  
+      logging:
+        log_every: 10
+        use_wandb: false  # 可选: 使用Weights & Biases追踪实验
+
+
+
